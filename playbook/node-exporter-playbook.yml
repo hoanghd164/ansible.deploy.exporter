@@ -1,0 +1,31 @@
+- name: Deploy Linux Node Exporter
+  hosts: all
+  become: true
+  gather_facts: yes
+  vars_files:
+    - ../include.d/proxy.yml
+  environment: "{{ proxy_env }}"
+  
+  pre_tasks:
+    - name: ICMP Ping Check to Host
+      ping:
+      register: result
+      failed_when: result.ping is not defined
+      no_log: true
+      tags: always
+
+    - debug:  msg="You are acting at {{ inventory_hostname }} {{ansible_host}}"
+      tags: always
+
+    - name: Exterminate mankind
+      pause: prompt='Please confirm you want to exterminate mankind! Press return to continue. Press Ctrl+c and then "a" to abort'
+      no_log: true
+      tags: always
+
+    - name: Gathering facts
+      setup:
+      tags: always
+
+  roles:
+    - role: ../roles/node_exporter
+      tags: node_exporter

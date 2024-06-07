@@ -1,0 +1,58 @@
+---
+- name: Get Node Exporter download URL
+  shell: "curl -s {{ node_exporter_url }} | grep browser_download_url | grep linux-amd64 | cut -d '\"' -f 4"
+  register: result
+
+- name: Download Node Exporter
+  get_url:
+    url: "{{ item }}"
+    dest: "/tmp/node_exporter.tar.gz"
+  with_items:
+    - "{{ result.stdout }}"
+
+- name: Extract Node Exporter tarball
+  unarchive:
+    src: "/tmp/node_exporter.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Move Node Exporter binary to /usr/local/bin
+  shell: cd /tmp && cp node_exporter*/node_exporter /usr/local/bin
+
+- name: Check Node Exporter version
+  command: 
+    cmd: "node_exporter --version"
+  register: version
+  changed_when: false
+
+- debug: 
+    var: version.stdout_lines
+
+- name: Create Node Exporter service
+  copy:
+    dest: "/etc/systemd/system/node_exporter.service"
+    content: |
+      [Unit]
+      Description=Node Exporter
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      User=root
+      ExecStart=/usr/local/bin/node_exporter
+
+      [Install]
+      WantedBy=default.target
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Start Node Exporter service
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: yes
+
+- debug: 
+    var: netstat_output.stdout_lines

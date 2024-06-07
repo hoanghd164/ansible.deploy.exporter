@@ -1,0 +1,51 @@
+---
+- name: Disable the service
+  command: systemctl disable {{ service_name }}
+  ignore_errors: true
+
+- name: Stop the service
+  command: systemctl stop {{ service_name }}
+  ignore_errors: true
+
+- name: Remove service file
+  command:
+    cmd: rm -f /etc/systemd/system/{{ service_name }}.service
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
+- name: Check if directory exists lshw_exporter
+  stat:
+    path: "/opt/{{ service_name }}"
+  register: folder_stat
+
+- name: Debug
+  debug:
+    var: folder_stat.stat.exists
+
+- name: Remove directory if it exists
+  file:
+    path: "/opt/{{ service_name }}"
+    state: absent
+  when: folder_stat.stat.exists
+
+- name: Check if lsof is installed
+  command: which lsof
+  register: lsof_installed
+  ignore_errors: true
+
+- name: Install lsof
+  apt:
+    name: lsof
+    state: present
+  when: lsof_installed.rc != 0
+
+- name: Check if port is being listened on
+  shell: "lsof -i :{{ sensor.options.exporter_port }}"
+  register: port_listening
+  ignore_errors: true
+
+- name: Kill process listening on port {{ sensor.options.exporter_port }}
+  shell: "lsof -i :{{ sensor.options.exporter_port }} | awk 'NR>1 {print $2}' | xargs kill -9"
+  when: port_listening.stdout != ""
+  ignore_errors: true

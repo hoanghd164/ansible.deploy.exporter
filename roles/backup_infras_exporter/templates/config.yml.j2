@@ -1,0 +1,18 @@
+---
+default:
+  exporter_port: {{ sensor.options.exporter_port }}
+  check_interval: {{ sensor.options.check_interval }}
+  
+sensor:
+  zfs:
+    enabled: {{ sensor.zfs.enable }}
+  rabbitmq:
+    enabled: {{ sensor.rabbitmq.enabled }}
+    targets:
+    {% for item in sensor.rabbitmq.workers %}
+  worker-{{ ansible_ssh_host }}:
+        ip: {{ ansible_ssh_host }}
+        port: {{ item.port }}
+        user: {{ item.manager_user }}
+        password: {{ item.manager_password }}
+    {% endfor %}

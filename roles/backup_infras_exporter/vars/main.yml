@@ -1,0 +1,19 @@
+---
+service_name: 'backup_infra_exporter'
+packages:
+  - python3-pip
+  - python3-venv
+
+sensor:
+  options:
+    exporter_port: 16499
+    check_interval: 30
+  zfs:
+    enable: True
+
+  rabbitmq:
+    enabled: True
+    workers:
+      - manager_user: username
+        manager_password: password
+        port: 15672

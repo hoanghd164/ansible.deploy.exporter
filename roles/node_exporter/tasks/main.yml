@@ -1,0 +1,6 @@
+---
+- import_tasks: deploy.yml
+  when: run_deploy_node_exporter | default(false)
+
+- import_tasks: destroy.yml
+  when: run_destroy_node_exporter | default(false)

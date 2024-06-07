@@ -1,0 +1,16 @@
+proxy_env:
+  # http_proxy: http://10.10.16.199:3128
+  # https_proxy: http://10.10.16.199:3128
+  # no_proxy: "10.10.16.0/24,localhost,127.0.0.1,docker-registry.somecorporation.com"
+
+  http_proxy: http://10.237.7.250:3128
+  https_proxy: http://10.237.7.250:3128
+  no_proxy: "10.237.7.0/24,localhost,127.0.0.1,docker-registry.somecorporation.com"
+
+  # http_proxy: http://10.10.14.199:3128
+  # https_proxy: http://10.10.14.199:3128
+  # no_proxy: "10.10.14.0/24,localhost,127.0.0.1,docker-registry.somecorporation.com"
+
+  # http_proxy: http://192.168.100.100:3128
+  # https_proxy: http://192.168.100.100:3128
+  # no_proxy: "192.168.100.0/24,localhost,127.0.0.1,docker-registry.somecorporation.com"

@@ -1,0 +1,6 @@
+---
+- import_tasks: deploy.yml
+  when: run_deploy_backup_infras_exporter | default(false)
+
+- import_tasks: destroy.yml
+  when: run_destroy_backup_infras_exporter | default(false)

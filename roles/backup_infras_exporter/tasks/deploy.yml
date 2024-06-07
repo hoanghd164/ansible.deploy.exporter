@@ -1,0 +1,80 @@
+---
+- name: Check if unattended-upgrades process is running
+  shell: "ps aux | grep unattended-upgr | grep -v grep | awk '{print $2}'"
+  register: unattended_upgrades_pid
+  changed_when: false
+
+- name: Print unattended-upgrades process ID
+  debug:
+    var: unattended_upgrades_pid.stdout
+
+- name: Kill unattended-upgrades process
+  command: "kill -9 {{ unattended_upgrades_pid.stdout }}"
+  when: unattended_upgrades_pid.stdout != ""
+
+- name: Update apt and install required packages
+  apt:
+    update_cache: yes
+    name: "{{ item }}"
+    state: present
+  loop: "{{ packages }}"
+
+- name: Create the directory
+  file:
+    path: "/opt/{{ service_name }}/source"
+    state: directory
+
+- name: Create the virtual environment
+  command: python3 -m venv /opt/{{ service_name }}
+
+- name: Create a source directory
+  file:
+    path: /opt/{{ service_name }}/source
+    state: directory
+
+- name: Copy {{ service_name }} script to the source directory
+  ansible.builtin.copy:
+    src: ../roles/backup_infras_exporter/source
+    dest: "/opt/{{ service_name }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install the required packages
+  pip:
+    requirements: "/opt/{{ service_name }}/source/requirements.txt"
+    virtualenv: "/opt/{{ service_name }}"
+
+- name: Generate config file from template
+  template:
+    src: config.yml.j2
+    dest: /opt/{{ service_name }}/source/config.yml
+
+- name: Create a systemd service
+  copy:
+    dest: "/etc/systemd/system/{{ service_name }}.service"
+    content: |
+      [Unit]
+      Description=Exporter Custom Metrics Service
+      After=network.target
+
+      [Service]
+      WorkingDirectory=/opt/{{ service_name }}/source
+      ExecStart=/opt/{{ service_name }}/bin/python /opt/{{ service_name }}/source/run.py
+      Restart=always
+      User=root
+      Group=root
+      Environment=PYTHONUNBUFFERED=1
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start the service
+  systemd:
+    name: "{{ service_name }}"
+    enabled: yes
+    state: restarted
